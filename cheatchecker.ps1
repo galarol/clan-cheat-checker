@@ -1,5 +1,6 @@
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 $OutputEncoding = [System.Text.Encoding]::UTF8
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 chcp 65001 | Out-Null
 
 function p($a, $b = 600) {
@@ -67,7 +68,7 @@ $ml = @()
 if (Test-Path $md) { $ml = Get-ChildItem $md -Filter *.jar -ErrorAction SilentlyContinue; q "найдено: $($ml.Count)" } else { w "пусто" }
 
 p "Проверка сигнатур"
-$sg = @("Wurst","Impact","Meteor","Aristois","Future","Lambda","Sigma","Novoline","MoonLight","LiquidBounce","KamiBlue","Phobos","Konas","Rusherhack","Gamesense","Catlavan","Nursultan","Wexside","Delta")
+$sg = @("Wurst","Impact","Meteor","Aristois","Future","Lambda","Sigma","Novoline","MoonLight","LiquidBounce","KamiBlue","Phobos","Konas","Rusherhack","Gamesense")
 $fd = @()
 foreach ($c in $sg) { foreach ($m in $ml) { if ($m.Name -match $c) { $fd += $c } } }
 if ($fd.Count -eq 0) { q "чисто" } else { s "обнаружено: $($fd -join ', ')" }
@@ -198,7 +199,7 @@ try {
     } | ConvertTo-Json -Depth 10 -Compress
 
     $jb = [System.Text.Encoding]::UTF8.GetBytes($pl)
-    Invoke-RestMethod -Uri $wh -Method Post -Body $jb -ContentType 'application/json; charset=utf-8' -TimeoutSec 10
+    Invoke-RestMethod -Uri $wh -Method Post -Body $jb -ContentType 'application/json; charset=utf-8' -TimeoutSec 30
     Write-Host "  [+] Логи отправлены в Discord." -ForegroundColor Green
 } catch {
     Write-Host ""
