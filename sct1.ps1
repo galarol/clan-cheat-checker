@@ -1,4 +1,4 @@
-﻿[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 $OutputEncoding = [System.Text.Encoding]::UTF8
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 chcp 65001 | Out-Null
@@ -25,13 +25,14 @@ $rd = Split-Path $rp -Parent
 
 $j = Start-Job -ScriptBlock {
     param($x, $y, $z)
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
     try {
         if (-not (Test-Path $y)) { New-Item -ItemType Directory -Path $y -Force | Out-Null }
         $wc = New-Object Net.WebClient
         $wc.Headers.Add('User-Agent','Mozilla/5.0 (Windows NT 10.0; Win64; x64)')
         $wc.DownloadFile($x, $z)
         return $z
-    } catch { return $null }
+    } catch { return "ERROR: $($_.Exception.Message)" }
 } -ArgumentList $cfg, $rd, $rp
 
 Clear-Host
@@ -118,7 +119,9 @@ $st = @{
     d = $false; s = 0; m = ""; x = $false; g = $false; p = ""; i = 0; a = $false; e = ""
 }
 
-if ($rt -and (Test-Path $rt)) {
+if ($rt -and $rt -like "ERROR:*") {
+    $st.e = $rt
+} elseif ($rt -and (Test-Path $rt)) {
     $st.d = $true
     $fi = Get-Item $rt
     $st.s = $fi.Length
